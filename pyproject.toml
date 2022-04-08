@@ -2,7 +2,7 @@
 name = "leine-lyd-plan"
 version = "0.1.0"
 description = ""
-authors = ["Kelvin Sundli <kelvin.sundli@cognite.com>"]
+authors = ["Kelvin Sundli <kelvin.sundli@gmail.com>", "Joachim Leine <joachim@leine.guru>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"

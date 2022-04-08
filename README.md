@@ -25,6 +25,12 @@ poetry run streamlit run src/app.py
 
 Nå vil den be deg om å autentisere med Spotify og gi riktige
 
+## Bidra
+Akkurat som å bruke den, men kjør også følgende kommando for å installere `pre-commit`-hooks slik at koden automatisk kontrolleres (og eventuelt fikses) for stil, ubrukte imports, o.l. på hver `git commit`
+```sh
+poetry run pre-commit install
+```
+
 ## Komponenter
 #### [Spotipy](https://spotipy.readthedocs.io/en/2.19.0/)
 Python SDK for Spotify Web API. [Here](https://developer.spotify.com/console/) is a great way explore the API when developing!
