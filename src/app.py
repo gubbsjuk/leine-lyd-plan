@@ -4,17 +4,16 @@ import streamlit as st
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
 
+from constants import CONFIG_PATH, PLAN_PATH
 from utils import load_json, write_json
 
 
 load_dotenv()  # take environment variables from .env.
 
-plan_path = "src/plan.json"
-config_path = "src/config.json"
 
 # Load existing files they exist, else start a blank one..
-plans = load_json(plan_path, [])
-config = load_json(config_path)
+plans = load_json(PLAN_PATH, [])
+config = load_json(CONFIG_PATH)
 
 # scope = ["user-read-private", "user-read-email", "playlist-read-private", "playlist-read-public", "user-modify-playback-state"]
 spotify = spotipy.Spotify(
@@ -39,7 +38,7 @@ st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 device_name = st.sidebar.selectbox("Device:", st.session_state.device_map.keys())
 config["device_id"] = st.session_state.device_map.get(device_name, None)
-write_json(config_path, config)
+write_json(CONFIG_PATH, config)
 
 st.title("Leine Lyds lille lyd-løsning.")
 st.text(
@@ -55,15 +54,18 @@ with st.form(key="playlist_entry_form"):
     )
     start_time = st.time_input("Start time")
     if st.form_submit_button("Submit"):
-        plans.append(
-            {
-                "playlist": playlist,
-                "playlist_id": st.session_state.playlist_map[playlist],
-                "start_day": start_day,
-                "start_time": start_time.isoformat(),
-            }
-        )
-        write_json(plan_path, plans)
+        plan = {
+            "playlist": playlist,
+            "playlist_id": st.session_state.playlist_map[playlist],
+            "start_day": start_day,
+            "start_time": start_time.isoformat(),
+        }
+        # TODO: Check if plan already exists..
+        # if True:
+        #    st.error("There is already an entry at this time. Please remove it first.")
+
+        plans.append(plan)
+        write_json(PLAN_PATH, plans)
         st.balloons()  # TODO: Remove this shit :cry:
 
 
@@ -78,5 +80,5 @@ for i, plan in enumerate(plans):
         if st.form_submit_button("Delete"):
             st.write("deleting", i)
             plans.pop(i)
-            write_json(plan_path, plans)
+            write_json(PLAN_PATH, plans)
             raise st.experimental_rerun()
