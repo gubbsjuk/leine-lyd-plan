@@ -59,7 +59,8 @@ with st.form(key="playlist_entry_form"):
     if st.form_submit_button("Submit"):
         plan = {
             "playlist": playlist,
-            "playlist_id": st.session_state.playlist_map[playlist],
+            "playlist_id": "spotify:playlist:"
+            + st.session_state.playlist_map[playlist],
             "start_day": start_day,
             "start_time": start_time.isoformat(),
         }

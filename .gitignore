@@ -1,6 +1,11 @@
 # pesky mac stuff
 .DS_Store
 
+# App specific
+src/config.json
+src/plan.json
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

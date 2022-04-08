@@ -36,7 +36,9 @@ def main(spotify):
             getattr(schedule.every(), day).at(p["start_time"]).do(
                 play, spotify=spotify, playlist_id=p["playlist_id"]
             )
-        print(schedule.get_jobs())
+        for i, job in enumerate(schedule.get_jobs()):
+            print(f"Job {i}: ", job)
+
         plans["updated"] = False
         write_json(PLAN_PATH, plans)
 
