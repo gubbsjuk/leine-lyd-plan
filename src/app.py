@@ -38,11 +38,13 @@ st.sidebar.title("Configuration")
 st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 device_name = st.sidebar.selectbox("Device:", st.session_state.device_map.keys())
-config["device_id"] = st.session_state.device_map[device_name]
+config["device_id"] = st.session_state.device_map.get(device_name, None)
 write_json(config_path, config)
 
-st.title("Leine lyd liker å planlegge spillelister!")
-st.text("(men gjør dette mest fordi mange bartendere er ubrukelige...)")
+st.title("Leine Lyds lille lyd-løsning.")
+st.text(
+    "Leine lyd liker å planlegge spillelister (men gjør dette mest fordi servitører er ubrukelige...)"
+)
 
 st.subheader("Add to plan", anchor="add")
 with st.form(key="playlist_entry_form"):
