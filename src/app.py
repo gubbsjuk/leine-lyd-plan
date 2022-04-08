@@ -10,15 +10,18 @@ from utils import load_json, write_json
 
 load_dotenv()  # take environment variables from .env.
 
-
 # Load existing files they exist, else start a blank one..
-plans = load_json(PLAN_PATH, [])
+plans = load_json(PLAN_PATH, {"updated": True, "plans": []})
 config = load_json(CONFIG_PATH)
 
 # scope = ["user-read-private", "user-read-email", "playlist-read-private", "playlist-read-public", "user-modify-playback-state"]
 spotify = spotipy.Spotify(
     client_credentials_manager=SpotifyOAuth(
-        scope=["user-read-playback-state", "playlist-read-private"]
+        scope=[
+            "user-read-playback-state",
+            "playlist-read-private",
+            "user-modify-playback-state",
+        ]
     )
 )  # scope=scope))
 
@@ -64,14 +67,15 @@ with st.form(key="playlist_entry_form"):
         # if True:
         #    st.error("There is already an entry at this time. Please remove it first.")
 
-        plans.append(plan)
+        plans["plans"].append(plan)
+        plans["updated"] = True
         write_json(PLAN_PATH, plans)
         st.balloons()  # TODO: Remove this shit :cry:
 
 
 st.subheader("Your plan", anchor="plan")
 
-for i, plan in enumerate(plans):
+for i, plan in enumerate(plans["plans"]):
     with st.form(f"playlist_remove_{i}"):
         st.write(plan["playlist"], key=f"playlist_{i}")
         st.write(
@@ -79,6 +83,7 @@ for i, plan in enumerate(plans):
         )
         if st.form_submit_button("Delete"):
             st.write("deleting", i)
-            plans.pop(i)
+            plans["plans"].pop(i)
+            plans["updated"] = True
             write_json(PLAN_PATH, plans)
             raise st.experimental_rerun()
