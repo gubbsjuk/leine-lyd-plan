@@ -37,7 +37,7 @@ if "device_map" not in st.session_state:
 if "playlist_map" not in st.session_state:
     playlists = spotify.current_user_playlists(limit=50)
     # TODO: Maybe refresh button here too?
-    st.session_state.playlist_map = {p["name"]: p["id"] for p in playlists["items"]}
+    st.session_state.playlist_map = {p["name"]: p["uri"] for p in playlists["items"]}
 
 
 st.sidebar.title("Configuration")
@@ -51,7 +51,6 @@ device_entry = {
 }
 
 with Session(engine) as session:
-    spotify.current_user()
     session.on_duplicate_key_update(Config(**device_entry))
 
 st.title("Leine Lyds lille lyd-løsning.")
@@ -70,8 +69,7 @@ with st.form(key="playlist_entry_form"):
     if st.form_submit_button("Submit"):
         plan_entry = {
             "playlist": playlist,
-            "playlist_id": "spotify:playlist:"
-            + st.session_state.playlist_map[playlist],
+            "playlist_id": st.session_state.playlist_map[playlist],
             "start_day": start_day.lower(),
             "start_time": start_time.isoformat(),
         }
