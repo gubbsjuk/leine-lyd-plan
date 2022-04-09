@@ -25,9 +25,12 @@ SPOTIPY_REDIRECT_URI=http://127.0.0.1:8501
 
 Når du henter client info fra [Spotify Dashboard](https://developer.spotify.com/dashboard/), må du også konfigurere `Redirect URIs` til å inneholde samme redirect URI som over.
 
-For å kjøre applikasjonen
+For å kjøre applikasjonen, kjør disse i to forskjellige vinduer:
 ```sh
 poetry run streamlit run src/app.py
+```
+```sh
+poetry run python src/play_schedule.py
 ```
 
 Nå vil den be deg om å autentisere med Spotify og gi riktige
