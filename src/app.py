@@ -10,11 +10,9 @@ from sqlalchemy.orm import Session
 from models.schedule import Schedule
 
 
-print("This shit....")
 engine = create_engine(
     "sqlite:///5l.db", echo=True, future=True
 )  # TODO: Check if this can be run only once..
-print("... happens every time.")
 
 
 load_dotenv()  # take environment variables from .env.
