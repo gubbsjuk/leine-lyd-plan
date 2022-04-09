@@ -1,11 +1,10 @@
-from sqlite3 import IntegrityError
-
 import spotipy
 import streamlit as st
 
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.schedule import Schedule
@@ -74,12 +73,11 @@ with st.form(key="playlist_entry_form"):
             session.add(Schedule(**plan_entry))
             try:
                 session.commit()
+                st.balloons()  # TODO: Remove this shit :cry:
             except IntegrityError:
                 st.error(
                     "There is already an entry at this time. Please remove it first."
                 )
-
-        st.balloons()  # TODO: Remove this shit :cry:
 
 
 st.subheader("Your plan", anchor="plan")
