@@ -1,5 +1,5 @@
 import argparse
-import datetime  # TODO: Remove
+import datetime
 import time
 
 import schedule
