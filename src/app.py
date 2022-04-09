@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.schedule import Schedule
+from models.config_mdl import Config
 
 
 engine = create_engine(
@@ -44,6 +45,14 @@ st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 # TODO: Add a db table for config stuff? Currently device is not passed from app to scheduler.
 device_name = st.sidebar.selectbox("Device:", st.session_state.device_map.keys())
+device_entry = {
+    "userID": spotify.current_user(),
+    "deviceID": device_name,
+}
+
+with Session(engine) as session:
+    spotify.current_user()
+    session.on_duplicate_key_update(Config(**device_entry))
 
 st.title("Leine Lyds lille lyd-løsning.")
 st.text(
