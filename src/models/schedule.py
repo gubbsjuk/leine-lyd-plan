@@ -10,7 +10,7 @@ Base = declarative_base()  # type: Any
 class Schedule(Base):
     __tablename__ = "schedule"
     playlist = Column(String())
-    playlist_id = Column(String(), primary_key=True)
+    playlist_id = Column(String())
     start_day = Column(String(), primary_key=True)
     start_time = Column(String(), primary_key=True)
     last_updated = Column(
