@@ -4,9 +4,9 @@ Også kalt `5L` (utales "feml")
 ## TODO
 - [x] UI to generate plan + config
 - [x] App to read plan, schedule and run on spotify
-- [] Fix read/write collisions (sometimes buggy...)
-- [] Multi-user
-- [] Robust auth for scheduling service (works now, but don't know how)
+- [ ] Fix read/write collisions (sometimes buggy...)
+- [ ] Multi-user
+- [ ] Robust auth for scheduling service (works now, but don't know how)
 
 ## Bruk
 For å kjøre denne løsningen trenger du `poetry` (og pyenv?).
