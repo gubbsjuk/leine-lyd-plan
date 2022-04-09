@@ -11,7 +11,7 @@ from models.schedule import Schedule
 
 
 engine = create_engine(
-    "sqlite:///5l.db", echo=True, future=True
+    "sqlite:///5l.db", echo=False, future=True
 )  # TODO: Check if this can be run only once..
 
 
