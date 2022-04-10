@@ -1,10 +1,5 @@
-from typing import Any
-
+from base import Base
 from sqlalchemy import TIMESTAMP, Column, String, func
-from sqlalchemy.ext.declarative import declarative_base
-
-
-Base = declarative_base()  # type: Any
 
 
 class Schedule(Base):
