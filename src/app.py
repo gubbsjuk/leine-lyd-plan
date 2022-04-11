@@ -43,7 +43,6 @@ if "playlist_map" not in st.session_state:
 st.sidebar.title("Configuration")
 st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
-# TODO: Add a db table for config stuff? Currently device is not passed from app to scheduler.
 
 with st.sidebar.form(key="device_entry_form"):
     device_name = st.selectbox("Device:", st.session_state.device_map.keys())
