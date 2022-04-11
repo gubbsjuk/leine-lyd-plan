@@ -85,7 +85,7 @@ with st.form(key="playlist_entry_form"):
     if st.form_submit_button("Submit"):
         plan_entry = {
             "playlist": playlist,
-            "playlist_id": st.session_state.playlist_map[playlist],
+            "playlist_uri": st.session_state.playlist_map[playlist],
             "start_day": start_day.lower(),
             "start_time": start_time.isoformat(),
         }
@@ -120,7 +120,7 @@ for i, plan in enumerate(plans):
             st.write("deleting", i)
             with Session(engine) as session:
                 session.query(Schedule).filter_by(
-                    playlist_id=plan.playlist_id,
+                    playlist_uri=plan.playlist_uri,
                     start_day=plan.start_day,
                     start_time=plan.start_time,
                 ).delete()

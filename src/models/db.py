@@ -20,7 +20,7 @@ class Device(Base):
 class Schedule(Base):
     __tablename__ = "schedule"
     playlist = Column(String())
-    playlist_id = Column(String())
+    playlist_uri = Column(String())
     start_day = Column(String(), primary_key=True)
     start_time = Column(String(), primary_key=True)
     last_updated = Column(
