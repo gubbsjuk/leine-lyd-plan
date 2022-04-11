@@ -1,5 +1,6 @@
-from base import Base
 from sqlalchemy import TIMESTAMP, Column, String, func
+
+from models.base import Base
 
 
 class Schedule(Base):
