@@ -65,9 +65,14 @@ st.text(
 )
 
 with Session(engine) as session:  # TODO: This query is probably redundant.
-    dev = session.query(Device.device_name).first()[0]
+    dev = session.query(Device.device_name).first()
     session.commit()
-    st.text("Playback on device: " + dev)
+
+    if dev:
+        st.text("Playback on device: " + dev[0])
+    else:
+        st.text("Please select playback device.")
+
 
 st.subheader("Add to plan", anchor="add")
 with st.form(key="playlist_entry_form"):

@@ -18,11 +18,12 @@ load_dotenv()  # take environment variables from .env.
 
 def play(spotify, playlist_id):  # TODO: Set device id from db(?)
     with Session(engine) as session:
-        device = session.query(Device.device_id).first()[0]
+        device = session.query(Device.device_id).first()
         session.commit()
 
-    print("Starting playback on: " + device)
-    spotify.start_playback(device_id=device, context_uri=playlist_id)
+    if device:
+        print("Starting playback on: " + device[0])
+        spotify.start_playback(device_id=device[0], context_uri=playlist_id)
 
 
 def check_for_update_in_table(session, table):
