@@ -1,19 +1,102 @@
-# import schedule
-# import spotipy
+import argparse
+import datetime
+import time
 
-# from dotenv import load_dotenv
-# from spotipy.oauth2 import SpotifyOAuth
+import schedule
+import spotipy
 
-# from constants import CONFIG_PATH, PLAN_PATH
-# from utils import load_json
+from dotenv import load_dotenv
+from spotipy.oauth2 import SpotifyOAuth
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
-
-# load_dotenv()  # take environment variables from .env.
-
-
-# def main():
-#     plans = load_json(PLAN_PATH, [])
+from models.db import Device, Schedule
 
 
-# if __name__ == "__main__":
-#     main()
+load_dotenv()  # take environment variables from .env.
+
+
+def play(spotify, playlist_uri, device=None):
+    spotify.start_playback(device_id=device, context_uri=playlist_uri)
+
+
+def setup_play(spotify, playlist_uri):
+    with Session(engine) as session:
+        device = session.query(Device.device_id).first()
+        session.commit()
+
+    if device:
+        print("Starting playback on: " + device[0])
+        play(spotify=spotify, playlist_uri=playlist_uri, device=device[0])
+
+
+def check_for_update_in_table(session, table):
+
+    last_updated_response = (
+        session.query(table.last_updated).order_by(table.last_updated.desc()).first()
+    )
+
+    if last_updated_response is not None:
+        return last_updated_response[0]
+
+    return datetime.datetime(1970, 1, 1)  # TODO: Fix this hack.
+
+
+def main(spotify, engine, update_interval):
+    last_updated = datetime.datetime(1970, 1, 1)
+    last_updated_from_db = last_updated
+
+    n_entries = 0
+    n_entries_from_db = n_entries
+
+    while True:
+        print(datetime.datetime.now(), ": Looking for new playlists in schedule")
+        schedule.run_pending()
+
+        plans = []
+
+        with Session(engine) as session:
+
+            last_updated_from_db = check_for_update_in_table(session, Schedule)
+            n_entries_from_db = session.query(Schedule.last_updated).count()
+
+        # if nothing has changed since last time
+        if (last_updated_from_db <= last_updated) and (n_entries_from_db == n_entries):
+            time.sleep(update_interval)
+            continue
+
+        plans = session.query(Schedule).all()
+
+        last_updated = last_updated_from_db
+        n_entries = n_entries_from_db
+
+        schedule.clear()
+        for p in plans:
+            getattr(schedule.every(), p.start_day).at(p.start_time).do(
+                setup_play, spotify=spotify, playlist_uri=p.playlist_uri
+            )
+
+        print("CURRENT SCHEDULE:")
+        for i, job in enumerate(schedule.get_jobs()):
+            print(f"Job {i}: ", job)  # TODO: Remove this...
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-i",
+        "--interval",
+        type=int,
+        default=60,
+        help="Schedule refresh interval in seconds.",
+    )
+    args = parser.parse_args()
+
+    spotify = spotipy.Spotify(
+        client_credentials_manager=SpotifyOAuth(scope=["user-modify-playback-state"])
+    )
+    engine = create_engine("sqlite:///5l.db", echo=False, future=True)
+
+    main(spotify, engine, args.interval)
