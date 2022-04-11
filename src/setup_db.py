@@ -2,7 +2,7 @@ import sqlalchemy_utils
 
 from sqlalchemy import create_engine
 
-from models.schedule import Base
+from models.db import Base
 
 
 engine = create_engine("sqlite:///5l.db", echo=True, future=True)

@@ -7,13 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from models.schedule import Schedule
+from models.db import Device, Schedule
 
 
 engine = create_engine(
     "sqlite:///5l.db", echo=False, future=True
 )  # TODO: Check if this can be run only once..
-
 
 load_dotenv()  # take environment variables from .env.
 
@@ -27,6 +26,8 @@ spotify = spotipy.Spotify(
     )
 )
 
+st.set_page_config(layout="wide")  # This needs to be the 1st streamlit call.
+
 if "device_map" not in st.session_state:
     devices = (
         spotify.devices()
@@ -36,19 +37,42 @@ if "device_map" not in st.session_state:
 if "playlist_map" not in st.session_state:
     playlists = spotify.current_user_playlists(limit=50)
     # TODO: Maybe refresh button here too?
-    st.session_state.playlist_map = {p["name"]: p["id"] for p in playlists["items"]}
+    st.session_state.playlist_map = {p["name"]: p["uri"] for p in playlists["items"]}
 
 
 st.sidebar.title("Configuration")
 st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 # TODO: Add a db table for config stuff? Currently device is not passed from app to scheduler.
-device_name = st.sidebar.selectbox("Device:", st.session_state.device_map.keys())
+
+with st.sidebar.form(key="device_entry_form"):
+    device_name = st.selectbox("Device:", st.session_state.device_map.keys())
+
+    if st.form_submit_button("Submit"):
+        device_entry = {
+            "user_id": spotify.current_user()["id"],
+            "device_id": st.session_state.device_map[device_name],
+            "device_name": device_name,
+        }
+
+        with Session(engine) as session:
+            session.merge(Device(**device_entry))
+            session.commit()
 
 st.title("Leine Lyds lille lyd-løsning.")
 st.text(
     "Leine lyd liker å planlegge spillelister (men gjør dette mest fordi servitører er ubrukelige...)"
 )
+
+with Session(engine) as session:  # TODO: This query is probably redundant.
+    dev = session.query(Device.device_name).first()
+    session.commit()
+
+    if dev:
+        st.text("Playback on device: " + dev[0])
+    else:
+        st.text("Please select playback device.")
+
 
 st.subheader("Add to plan", anchor="add")
 with st.form(key="playlist_entry_form"):
@@ -61,8 +85,7 @@ with st.form(key="playlist_entry_form"):
     if st.form_submit_button("Submit"):
         plan_entry = {
             "playlist": playlist,
-            "playlist_id": "spotify:playlist:"
-            + st.session_state.playlist_map[playlist],
+            "playlist_uri": st.session_state.playlist_map[playlist],
             "start_day": start_day.lower(),
             "start_time": start_time.isoformat(),
         }
@@ -97,7 +120,7 @@ for i, plan in enumerate(plans):
             st.write("deleting", i)
             with Session(engine) as session:
                 session.query(Schedule).filter_by(
-                    playlist_id=plan.playlist_id,
+                    playlist_uri=plan.playlist_uri,
                     start_day=plan.start_day,
                     start_time=plan.start_time,
                 ).delete()
