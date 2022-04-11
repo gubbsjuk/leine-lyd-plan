@@ -16,14 +16,18 @@ from models.db import Device, Schedule
 load_dotenv()  # take environment variables from .env.
 
 
-def play(spotify, playlist_id):  # TODO: Set device id from db(?)
+def play(spotify, playlist_id, device=None):
+    spotify.start_playback(device_id=device, context_uri=playlist_id)
+
+
+def setup_play(spotify, playlist_id):
     with Session(engine) as session:
         device = session.query(Device.device_id).first()
         session.commit()
 
     if device:
         print("Starting playback on: " + device[0])
-        spotify.start_playback(device_id=device[0], context_uri=playlist_id)
+        play(spotify=spotify, playlist_id=playlist_id, device=device[0])
 
 
 def check_for_update_in_table(session, table):
@@ -69,7 +73,7 @@ def main(spotify, engine, update_interval):
         schedule.clear()
         for p in plans:
             getattr(schedule.every(), p.start_day).at(p.start_time).do(
-                play, spotify=spotify, playlist_id=p.playlist_id
+                setup_play, spotify=spotify, playlist_id=p.playlist_id
             )
 
         print("CURRENT SCHEDULE:")
