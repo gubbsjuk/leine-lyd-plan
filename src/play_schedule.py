@@ -10,16 +10,31 @@ from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from models.schedule import Schedule
+from models.db import Device, Schedule
 
 
 load_dotenv()  # take environment variables from .env.
 
 
 def play(spotify, playlist_id):  # TODO: Set device id from db(?)
-    spotify.start_playback(
-        device_id="5b81dca57efb9ead5c69c4e4dd85e8d33d7b4977", context_uri=playlist_id
+    with Session(engine) as session:
+        device = session.query(Device.device_id).first()[0]
+        session.commit()
+
+    print("Starting playback on: " + device)
+    spotify.start_playback(device_id=device, context_uri=playlist_id)
+
+
+def check_for_update_in_table(session, table):
+
+    last_updated_response = (
+        session.query(table.last_updated).order_by(table.last_updated.desc()).first()
     )
+
+    if last_updated_response is not None:
+        return last_updated_response[0]
+
+    return datetime.datetime(1970, 1, 1)  # TODO: Fix this hack.
 
 
 def main(spotify, engine, update_interval):
@@ -36,17 +51,9 @@ def main(spotify, engine, update_interval):
         plans = []
 
         with Session(engine) as session:
-            last_updated_response = (
-                session.query(Schedule.last_updated)
-                .order_by(Schedule.last_updated.desc())
-                .first()
-            )
 
-            if last_updated_response is not None:
-                last_updated_from_db = last_updated_response[0]
-
-            n_entries_from_db = session.query(Schedule.last_updated).count()  # TODO: On
-            print(f"{n_entries_from_db=}", f"{n_entries=}")
+            last_updated_from_db = check_for_update_in_table(session, Schedule)
+            n_entries_from_db = session.query(Schedule.last_updated).count()
 
         # if nothing has changed since last time
         if (last_updated_from_db <= last_updated) and (n_entries_from_db == n_entries):

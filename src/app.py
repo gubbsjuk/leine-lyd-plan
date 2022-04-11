@@ -7,14 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from models.device import Device
-from models.schedule import Schedule
+from models.db import Device, Schedule
 
 
 engine = create_engine(
     "sqlite:///5l.db", echo=False, future=True
 )  # TODO: Check if this can be run only once..
-
 
 load_dotenv()  # take environment variables from .env.
 
@@ -27,6 +25,8 @@ spotify = spotipy.Spotify(
         ]
     )
 )
+
+st.set_page_config(layout="wide")  # This needs to be the 1st streamlit call.
 
 if "device_map" not in st.session_state:
     devices = (
@@ -44,19 +44,30 @@ st.sidebar.title("Configuration")
 st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 # TODO: Add a db table for config stuff? Currently device is not passed from app to scheduler.
-device_name = st.sidebar.selectbox("Device:", st.session_state.device_map.keys())
-device_entry = {
-    "user_id": spotify.current_user(),
-    "device_id": device_name,
-}
 
-with Session(engine) as session:
-    session.on_duplicate_key_update(Device(**device_entry))
+with st.sidebar.form(key="device_entry_form"):
+    device_name = st.selectbox("Device:", st.session_state.device_map.keys())
+
+    if st.form_submit_button("Submit"):
+        device_entry = {
+            "user_id": spotify.current_user()["id"],
+            "device_id": st.session_state.device_map[device_name],
+            "device_name": device_name,
+        }
+
+        with Session(engine) as session:
+            session.merge(Device(**device_entry))
+            session.commit()
 
 st.title("Leine Lyds lille lyd-løsning.")
 st.text(
     "Leine lyd liker å planlegge spillelister (men gjør dette mest fordi servitører er ubrukelige...)"
 )
+
+with Session(engine) as session:  # TODO: This query is probably redundant.
+    dev = session.query(Device.device_name).first()[0]
+    session.commit()
+    st.text("Playback on device: " + dev)
 
 st.subheader("Add to plan", anchor="add")
 with st.form(key="playlist_entry_form"):
