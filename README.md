@@ -4,9 +4,9 @@ Også kalt `5L` (utales "feml")
 ## TODO
 - [x] UI to generate plan + config
 - [x] App to read plan, schedule and run on spotify
-- [ ] Fix read/write collisions (sometimes buggy...)
+- [x] Fix read/write collisions (sometimes buggy...)
 - [ ] Multi-user
-- [ ] Robust auth for scheduling service (works now, but don't know how)
+- [ ] Robust auth
 
 ## Bruk
 For å kjøre denne løsningen trenger du `poetry` (og pyenv?).
@@ -24,6 +24,12 @@ SPOTIPY_REDIRECT_URI=http://127.0.0.1:8501
 ```
 
 Når du henter client info fra [Spotify Dashboard](https://developer.spotify.com/dashboard/), må du også konfigurere `Redirect URIs` til å inneholde samme redirect URI som over.
+
+Sett opp databasen ved å kjøre
+```sh
+poetry run python src/setup_db.py
+```
+
 
 For å kjøre applikasjonen, kjør disse i to forskjellige vinduer:
 ```sh

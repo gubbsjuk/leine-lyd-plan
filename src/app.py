@@ -21,7 +21,6 @@ spotify = spotipy.Spotify(
         scope=[
             "user-read-playback-state",
             "playlist-read-private",
-            "user-modify-playback-state",
         ]
     )
 )
@@ -41,7 +40,6 @@ if "playlist_map" not in st.session_state:
 
 
 st.sidebar.title("Configuration")
-st.sidebar.selectbox("Account (NOT IMPLEMENTED YET)", ["Acc0", "Acc1"])
 
 
 with st.sidebar.form(key="device_entry_form"):
