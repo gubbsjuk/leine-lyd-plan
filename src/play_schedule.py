@@ -82,13 +82,15 @@ def main(spotify, engine, update_interval):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "-i",
         "--interval",
         type=int,
         default=60,
-        help="Schedule refresh interval in seconds",
+        help="Schedule refresh interval in seconds.",
     )
     args = parser.parse_args()
 
