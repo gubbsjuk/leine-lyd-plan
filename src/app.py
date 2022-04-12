@@ -29,17 +29,17 @@ def initialize_session_variables(st):
 def sign_in(st, url_params):
     # attempt sign-in with cached token.
     if st.session_state["cached_token"] != "":
-        sp = auth.app_sign_in(st, welcome_page)  # TODO: insert success func.
+        sp = auth.app_sign_in(st, welcome_page(st=st))  # TODO: insert success func.
         return sp
     # if no token, but code in url, get code, parse token and sign in.
     elif "code" in url_params:
         st.session_state["code"] = url_params["code"][0]
         auth.app_get_token(st)
-        sp = auth.app_sign_in(st, welcome_page)  # TODO: insert success func.
+        sp = auth.app_sign_in(st, welcome_page(st=st))  # TODO: insert success func.
         return sp
     # otherwise prompt for redirect.
     else:
-        welcome_page()
+        welcome_page(st=st)
 
 
 def welcome_page(st):
@@ -50,6 +50,8 @@ def welcome_page(st):
 
     oauth = SpotifyOAuth(scope=scope)
     st.session_state["oauth"] = oauth
+
+    oauth = st.session_state["oauth"]
 
     auth_url = oauth.get_authorize_url()
 
@@ -64,14 +66,14 @@ def welcome_page(st):
         "Leine lyd liker å planlegge spillelister (men gjør dette mest fordi servitører er ubrukelige...)"
     )
 
-    if not st.session_state["signed in"]:
+    if not st.session_state["signed_in"]:
         st.text(
             "No tokens found for this session. Please log in by clicking the link below."
         )
         st.markdown(link_html, unsafe_allow_html=True)
 
 
-def authenticated(spotify):
+def authenticated(st, spotify):
     if "device_map" not in st.session_state:
         devices = (
             spotify.devices()
@@ -186,4 +188,4 @@ initialize_session_variables(st=st)
 url_params = st.experimental_get_query_params()
 sp = sign_in(st=st, url_params=url_params)
 if st.session_state["signed_in"]:
-    authenticated(spotify=sp)
+    authenticated(st=st, spotify=sp)
