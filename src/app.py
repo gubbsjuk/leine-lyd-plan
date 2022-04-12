@@ -12,6 +12,8 @@ import auth
 from models.db import Device, Schedule
 
 
+# TODO: Move initalization of device_map and playlist_map here?
+# FIXME: Is this really neccearry?
 def initialize_session_variables(st):
     if "signed_in" not in st.session_state:
         st.session_state["signed_in"] = False
@@ -21,9 +23,6 @@ def initialize_session_variables(st):
         st.session_state["code"] = ""
     if "oauth" not in st.session_state:
         st.session_state["oauth"] = None
-
-    # TODO: Move initalization of device_map and playlist_map here?
-    # FIXME: Is this really neccearry?
 
 
 def sign_in(st, url_params):
@@ -186,6 +185,10 @@ st.set_page_config(layout="wide")  # This needs to be the 1st streamlit call.
 initialize_session_variables(st=st)
 
 url_params = st.experimental_get_query_params()
+
+# Display welcome screen and attempt sign-in.
 sp = sign_in(st=st, url_params=url_params)
+
+# If signed in, display full application.
 if st.session_state["signed_in"]:
     authenticated(st=st, spotify=sp)
