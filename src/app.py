@@ -65,7 +65,7 @@ def app_sidebar(spotify, engine):
 
         if st.form_submit_button("Submit"):
             device_entry = {
-                "user_id": spotify.current_user()["id"],
+                "user_uri": spotify.current_user()["uri"],
                 "device_id": st.session_state.device_map[device_name],
                 "device_name": device_name,
             }
@@ -131,6 +131,7 @@ def show_main_page(spotify, engine):
         start_time = st.time_input("Start time")
         if st.form_submit_button("Submit"):
             plan_entry = {
+                "user_uri": sp.current_user()["uri"],
                 "playlist": playlist,
                 "playlist_uri": st.session_state.playlist_map[playlist],
                 "start_day": start_day.lower(),
@@ -213,7 +214,7 @@ if st.session_state["signed_in"]:
     oauth = st.session_state["oauth"]
     token = oauth.cache_handler.get_cached_token()
     # Create SQL Cache handler and populate with token from the MemoryCacheHandler.
-    sql_cache = SQLiteCacheHandler(username=sp.current_user()["id"], db_path="5l.db")
+    sql_cache = SQLiteCacheHandler(username=sp.current_user()["uri"], db_path="5l.db")
     sql_cache.save_token_to_cache(token)
     oauth.cache_handler = sql_cache
 
@@ -221,7 +222,7 @@ if st.session_state["signed_in"]:
 
     con = sqlite3.connect("5l.db")
     cur = con.cursor()
-    test = cur.execute("SELECT * FROM token_info").fetchall()
+    test = cur.execute("SELECT * FROM device").fetchall()
     # con.commit()
     con.close()
 
