@@ -46,6 +46,18 @@ def app_sign_in():
         st.write(e)
     else:
         st.session_state["signed_in"] = True
+        st.session_state["spotify_user_uri"] = sp.current_user()["uri"]
+
+        # Retrive oauth with MemoryCacheHandler from streamlit cache, and get cached token.
+        oauth = st.session_state["oauth"]
+        token = oauth.cache_handler.get_cached_token()
+        # Create SQL Cache handler and populate with token from the MemoryCacheHandler.
+        sql_cache = SQLiteCacheHandler(
+            username=st.session_state["spotify_user_uri"], db_path="5l.db"
+        )
+        sql_cache.save_token_to_cache(token)
+        oauth.cache_handler = sql_cache
+
         show_login_page()
 
     return sp
@@ -131,7 +143,7 @@ def show_main_page(spotify, engine):
         start_time = st.time_input("Start time")
         if st.form_submit_button("Submit"):
             plan_entry = {
-                "user_uri": sp.current_user()["uri"],
+                "user_uri": st.session_state["spotify_user_uri"],
                 "playlist": playlist,
                 "playlist_uri": st.session_state.playlist_map[playlist],
                 "start_day": start_day.lower(),
@@ -151,7 +163,9 @@ def show_main_page(spotify, engine):
     st.subheader("Your plan", anchor="plan")
 
     with Session(engine) as session:
-        plans = session.query(Schedule).all()
+        plans = session.query(Schedule).where(
+            Schedule.user_uri == st.session_state["spotify_user_uri"]
+        )
 
     for i, plan in enumerate(plans):
         with st.form(f"playlist_remove_{i}"):
@@ -180,7 +194,6 @@ scopes = ["user-read-playback-state", "playlist-read-private"]
 
 if "signed_in" not in st.session_state:
     st.session_state["signed_in"] = False
-
 if "cached_token" not in st.session_state:
     st.session_state["cached_token"] = ""
 if "code" not in st.session_state:
@@ -210,20 +223,12 @@ else:
 # only display the following after login
 if st.session_state["signed_in"]:
     # TODO: Exchange Streamlit cache with SQLCache
-    # Retrive oauth with MemoryCacheHandler from streamlit cache, and get cached token.
-    oauth = st.session_state["oauth"]
-    token = oauth.cache_handler.get_cached_token()
-    # Create SQL Cache handler and populate with token from the MemoryCacheHandler.
-    sql_cache = SQLiteCacheHandler(username=sp.current_user()["uri"], db_path="5l.db")
-    sql_cache.save_token_to_cache(token)
-    oauth.cache_handler = sql_cache
 
     show_main_page(sp, engine)
 
     con = sqlite3.connect("5l.db")
     cur = con.cursor()
-    test = cur.execute("SELECT * FROM device").fetchall()
-    # con.commit()
+    test = cur.execute("SELECT * FROM schedule").fetchall()
     con.close()
 
     st.write(test)
