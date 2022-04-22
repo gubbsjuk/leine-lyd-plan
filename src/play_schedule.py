@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from models.db import Device, Schedule
+from spotipy_utils import SQLiteCacheHandler
 
 
 load_dotenv()  # take environment variables from .env.
@@ -20,10 +21,19 @@ def play(spotify, playlist_uri, device=None):
     spotify.start_playback(device_id=device, context_uri=playlist_uri)
 
 
-def setup_play(spotify, playlist_uri):
+def setup_play(user_uri, playlist_uri):
+    print("CALLED SETUP_PLAY")
     with Session(engine) as session:
-        device = session.query(Device.device_id).first()
+        device = (
+            session.query(Device.device_id).where(Device.user_uri == user_uri).first()
+        )
         session.commit()
+
+    oauth = SpotifyOAuth(
+        scope=["user-modify-playback-state"],
+        cache_handler=SQLiteCacheHandler(username=user_uri, db_path="5l.db"),
+    )  # TODO: move db to constants.py
+    spotify = spotipy.Spotify(auth_manager=oauth)
 
     if device:
         print("Starting playback on: " + device[0])
@@ -42,7 +52,7 @@ def check_for_update_in_table(session, table):
     return datetime.datetime(1970, 1, 1)  # TODO: Fix this hack.
 
 
-def main(spotify, engine, update_interval):
+def main(engine, update_interval):
     last_updated = datetime.datetime(1970, 1, 1)
     last_updated_from_db = last_updated
 
@@ -73,7 +83,7 @@ def main(spotify, engine, update_interval):
         schedule.clear()
         for p in plans:
             getattr(schedule.every(), p.start_day).at(p.start_time).do(
-                setup_play, spotify=spotify, playlist_uri=p.playlist_uri
+                setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
             )
 
         print("CURRENT SCHEDULE:")
@@ -94,9 +104,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    spotify = spotipy.Spotify(
-        client_credentials_manager=SpotifyOAuth(scope=["user-modify-playback-state"])
-    )
     engine = create_engine("sqlite:///5l.db", echo=False, future=True)
 
-    main(spotify, engine, args.interval)
+    main(engine, args.interval)
