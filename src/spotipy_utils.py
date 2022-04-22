@@ -73,11 +73,12 @@ class SQLiteCacheHandler(CacheHandler):
 
     def save_token_to_cache(self, token_info):
         con = sqlite3.connect(self.db_path)
+        token_info_json = json.dumps(token_info)
         try:
             cur = con.cursor()
             cur.execute(
-                "INSERT INTO token_info VALUES (?, ?)",
-                (self.username, json.dumps(token_info)),
+                "INSERT INTO token_info VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (self.username, token_info_json),
             )
             con.commit()
         except sqlite3.Error as error:
