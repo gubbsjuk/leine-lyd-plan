@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.db import Device, Schedule
-from streamlit_utils import StreamlitCacheHandler
+from spotipy_utils import StreamlitCacheHandler
 
 
 engine = create_engine(
