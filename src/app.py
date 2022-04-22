@@ -1,14 +1,17 @@
+import sqlite3
+
 import spotipy
 import streamlit as st
 
 from dotenv import load_dotenv
+from spotipy.cache_handler import MemoryCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.db import Device, Schedule
-from spotipy_utils import StreamlitCacheHandler
+from spotipy_utils import SQLiteCacheHandler
 
 
 engine = create_engine(
@@ -172,17 +175,19 @@ def show_main_page(spotify, engine):
 
 
 # Application
+scopes = ["user-read-playback-state", "playlist-read-private"]
+
 if "signed_in" not in st.session_state:
     st.session_state["signed_in"] = False
+
 if "cached_token" not in st.session_state:
     st.session_state["cached_token"] = ""
 if "code" not in st.session_state:
     st.session_state["code"] = ""
 if "oauth" not in st.session_state:
-    scopes = ["user-read-playback-state", "playlist-read-private"]
     oauth = SpotifyOAuth(
         scope=scopes,
-        cache_handler=StreamlitCacheHandler(),
+        cache_handler=MemoryCacheHandler(),
     )
     st.session_state["oauth"] = oauth
 
@@ -203,4 +208,21 @@ else:
 
 # only display the following after login
 if st.session_state["signed_in"]:
+    # TODO: Exchange Streamlit cache with SQLCache
+    # Retrive oauth with MemoryCacheHandler from streamlit cache, and get cached token.
+    oauth = st.session_state["oauth"]
+    token = oauth.cache_handler.get_cached_token()
+    # Create SQL Cache handler and populate with token from the MemoryCacheHandler.
+    sql_cache = SQLiteCacheHandler(username=sp.current_user()["id"], db_path="5l.db")
+    sql_cache.save_token_to_cache(token)
+    oauth.cache_handler = sql_cache
+
     show_main_page(sp, engine)
+
+    con = sqlite3.connect("5l.db")
+    cur = con.cursor()
+    test = cur.execute("SELECT * FROM token_info").fetchall()
+    # con.commit()
+    con.close()
+
+    st.write(test)
