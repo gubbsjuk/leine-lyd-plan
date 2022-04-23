@@ -230,5 +230,3 @@ if st.session_state["signed_in"]:
     cur = con.cursor()
     test = cur.execute("SELECT * FROM schedule").fetchall()
     con.close()
-
-    st.write(test)
