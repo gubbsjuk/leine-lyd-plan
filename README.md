@@ -5,7 +5,7 @@ Også kalt `5L` (utales "feml")
 - [x] UI to generate plan + config
 - [x] App to read plan, schedule and run on spotify
 - [x] Fix read/write collisions (sometimes buggy...)
-- [ ] Multi-user
+- [x] Multi-user
 - [ ] Robust auth
 
 ## Bruk
