@@ -10,6 +10,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from constants import SCOPES
 from models.db import Device, Schedule
 from spotipy_utils import SQLiteCacheHandler
 
@@ -22,7 +23,6 @@ def play(spotify, playlist_uri, device=None):
 
 
 def setup_play(user_uri, playlist_uri):
-    print("CALLED SETUP_PLAY")
     with Session(engine) as session:
         device = (
             session.query(Device.device_id).where(Device.user_uri == user_uri).first()
@@ -30,13 +30,14 @@ def setup_play(user_uri, playlist_uri):
         session.commit()
 
     oauth = SpotifyOAuth(
-        scope=["user-modify-playback-state"],
+        scope=SCOPES,
         cache_handler=SQLiteCacheHandler(username=user_uri, db_path="5l.db"),
+        open_browser=False,
     )  # TODO: move db to constants.py
     spotify = spotipy.Spotify(auth_manager=oauth)
 
     if device:
-        print("Starting playback on: " + device[0])
+        print("Starting playback on device:" + device[0])
         play(spotify=spotify, playlist_uri=playlist_uri, device=device[0])
 
 
@@ -60,7 +61,9 @@ def main(engine, update_interval):
     n_entries_from_db = n_entries
 
     while True:
-        print(datetime.datetime.now(), ": Looking for new playlists in schedule")
+        print(
+            datetime.datetime.now(), ": Looking for new playlists in schedule"
+        )  # TODO: Logging
         schedule.run_pending()
 
         plans = []
@@ -99,7 +102,7 @@ if __name__ == "__main__":
         "-i",
         "--interval",
         type=int,
-        default=60,
+        default=5,  # TODO: set higher
         help="Schedule refresh interval in seconds.",
     )
     args = parser.parse_args()

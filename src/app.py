@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from constants import SCOPES
 from models.db import Device, Schedule
 from spotipy_utils import SQLiteCacheHandler
 
@@ -190,7 +191,6 @@ def show_main_page(spotify, engine):
 
 
 # Application
-scopes = ["user-read-playback-state", "playlist-read-private"]
 
 if "signed_in" not in st.session_state:
     st.session_state["signed_in"] = False
@@ -200,7 +200,7 @@ if "code" not in st.session_state:
     st.session_state["code"] = ""
 if "oauth" not in st.session_state:
     oauth = SpotifyOAuth(
-        scope=scopes,
+        scope=SCOPES,
         cache_handler=MemoryCacheHandler(),
     )
     st.session_state["oauth"] = oauth
