@@ -111,7 +111,6 @@ def show_main_page(spotify, engine):
     if "playlist_map" not in st.session_state:
         results = spotify.current_user_playlists(limit=50)
         playlists = results["items"]
-        st.write(results)
         while results["next"]:
             results = spotify.next(results)
             playlists.extend(results["items"])
