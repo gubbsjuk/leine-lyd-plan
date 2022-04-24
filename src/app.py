@@ -1,5 +1,3 @@
-import sqlite3
-
 import spotipy
 import streamlit as st
 
@@ -225,8 +223,3 @@ if st.session_state["signed_in"]:
     # TODO: Exchange Streamlit cache with SQLCache
 
     show_main_page(sp, engine)
-
-    con = sqlite3.connect("5l.db")
-    cur = con.cursor()
-    test = cur.execute("SELECT * FROM schedule").fetchall()
-    con.close()
