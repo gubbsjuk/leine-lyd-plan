@@ -8,13 +8,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from constants import SCOPES
+from constants import DB_PATH, SCOPES
 from models.db import Device, Schedule
 from spotipy_utils import SQLiteCacheHandler
 
 
 engine = create_engine(
-    "sqlite:///5l.db", echo=False, future=True
+    "sqlite:///" + DB_PATH, echo=False, future=True
 )  # TODO: Check if this can be run only once..
 
 load_dotenv()  # take environment variables from .env.
@@ -52,7 +52,7 @@ def app_sign_in():
         token = oauth.cache_handler.get_cached_token()
         # Create SQL Cache handler and populate with token from the MemoryCacheHandler.
         sql_cache = SQLiteCacheHandler(
-            username=st.session_state["spotify_user_uri"], db_path="5l.db"
+            username=st.session_state["spotify_user_uri"], db_path=DB_PATH
         )
         sql_cache.save_token_to_cache(token)
         oauth.cache_handler = sql_cache
@@ -219,6 +219,4 @@ else:
 
 # only display the following after login
 if st.session_state["signed_in"]:
-    # TODO: Exchange Streamlit cache with SQLCache
-
     show_main_page(sp, engine)

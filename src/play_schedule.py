@@ -10,7 +10,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from constants import SCOPES
+from constants import DB_PATH, SCOPES
 from models.db import Device, Schedule
 from spotipy_utils import SQLiteCacheHandler
 
@@ -27,13 +27,12 @@ def setup_play(user_uri, playlist_uri):
         device = (
             session.query(Device.device_id).where(Device.user_uri == user_uri).first()
         )
-        session.commit()
 
     oauth = SpotifyOAuth(
         scope=SCOPES,
-        cache_handler=SQLiteCacheHandler(username=user_uri, db_path="5l.db"),
+        cache_handler=SQLiteCacheHandler(username=user_uri, db_path=DB_PATH),
         open_browser=False,
-    )  # TODO: move db to constants.py
+    )
     spotify = spotipy.Spotify(auth_manager=oauth)
 
     if device:
@@ -107,6 +106,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    engine = create_engine("sqlite:///5l.db", echo=False, future=True)
+    engine = create_engine("sqlite:///" + DB_PATH, echo=False, future=True)
 
     main(engine, args.interval)
