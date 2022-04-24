@@ -10,7 +10,9 @@ from spotipy.oauth2 import SpotifyOAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from constants import DB_PATH, SCOPES
 from models.db import Device, Schedule
+from spotipy_utils import SQLiteCacheHandler
 
 
 load_dotenv()  # take environment variables from .env.
@@ -20,13 +22,21 @@ def play(spotify, playlist_uri, device=None):
     spotify.start_playback(device_id=device, context_uri=playlist_uri)
 
 
-def setup_play(spotify, playlist_uri):
+def setup_play(user_uri, playlist_uri):
     with Session(engine) as session:
-        device = session.query(Device.device_id).first()
-        session.commit()
+        device = (
+            session.query(Device.device_id).where(Device.user_uri == user_uri).first()
+        )
+
+    oauth = SpotifyOAuth(
+        scope=SCOPES,
+        cache_handler=SQLiteCacheHandler(username=user_uri, db_path=DB_PATH),
+        open_browser=False,
+    )
+    spotify = spotipy.Spotify(auth_manager=oauth)
 
     if device:
-        print("Starting playback on: " + device[0])
+        print("Starting playback on device:" + device[0])
         play(spotify=spotify, playlist_uri=playlist_uri, device=device[0])
 
 
@@ -42,7 +52,7 @@ def check_for_update_in_table(session, table):
     return datetime.datetime(1970, 1, 1)  # TODO: Fix this hack.
 
 
-def main(spotify, engine, update_interval):
+def main(engine, update_interval):
     last_updated = datetime.datetime(1970, 1, 1)
     last_updated_from_db = last_updated
 
@@ -50,7 +60,9 @@ def main(spotify, engine, update_interval):
     n_entries_from_db = n_entries
 
     while True:
-        print(datetime.datetime.now(), ": Looking for new playlists in schedule")
+        print(
+            datetime.datetime.now(), ": Looking for new playlists in schedule"
+        )  # TODO: Logging
         schedule.run_pending()
 
         plans = []
@@ -73,7 +85,7 @@ def main(spotify, engine, update_interval):
         schedule.clear()
         for p in plans:
             getattr(schedule.every(), p.start_day).at(p.start_time).do(
-                setup_play, spotify=spotify, playlist_uri=p.playlist_uri
+                setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
             )
 
         print("CURRENT SCHEDULE:")
@@ -89,14 +101,11 @@ if __name__ == "__main__":
         "-i",
         "--interval",
         type=int,
-        default=60,
+        default=5,  # TODO: set higher
         help="Schedule refresh interval in seconds.",
     )
     args = parser.parse_args()
 
-    spotify = spotipy.Spotify(
-        client_credentials_manager=SpotifyOAuth(scope=["user-modify-playback-state"])
-    )
-    engine = create_engine("sqlite:///5l.db", echo=False, future=True)
+    engine = create_engine("sqlite:///" + DB_PATH, echo=False, future=True)
 
-    main(spotify, engine, args.interval)
+    main(engine, args.interval)
