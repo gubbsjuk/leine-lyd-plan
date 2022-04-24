@@ -119,12 +119,16 @@ def show_main_page(spotify, engine):
         st.session_state.playlist_map = {p["name"]: p["uri"] for p in playlists}
 
     with Session(engine) as session:
-        playback_device = session.query(Device.device_name).first()
+        playback_device = (
+            session.query(Device.device_name)
+            .where(Device.user_uri == st.session_state["spotify_user_uri"])
+            .first()
+        )
 
-        if playback_device:
-            st.text("Playback on device: " + playback_device[0])
-        else:
-            st.text("Please select playback device.")
+    if playback_device:
+        st.text("Playback on device: " + playback_device[0])
+    else:
+        st.text("Please select playback device.")
 
     st.subheader("Add to plan", anchor="add")
     with st.form(key="playlist_entry_form"):
