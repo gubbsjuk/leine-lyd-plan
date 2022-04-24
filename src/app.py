@@ -109,11 +109,14 @@ def show_main_page(spotify, engine):
     app_sidebar(spotify, engine)
 
     if "playlist_map" not in st.session_state:
-        playlists = spotify.current_user_playlists(limit=50)
+        results = spotify.current_user_playlists(limit=50)
+        playlists = results["items"]
+        while results["next"]:
+            results = spotify.next(results)
+            playlists.extend(results["items"])
+
         # TODO: Maybe refresh button here too?
-        st.session_state.playlist_map = {
-            p["name"]: p["uri"] for p in playlists["items"]
-        }
+        st.session_state.playlist_map = {p["name"]: p["uri"] for p in playlists}
 
     with Session(engine) as session:
         playback_device = session.query(Device.device_name).first()
