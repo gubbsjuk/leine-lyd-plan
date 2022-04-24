@@ -115,12 +115,11 @@ def show_main_page(spotify, engine):
             p["name"]: p["uri"] for p in playlists["items"]
         }
 
-    with Session(engine) as session:  # TODO: This query is probably redundant.
-        dev = session.query(Device.device_name).first()
-        session.commit()  # TODO: Is this needed?
+    with Session(engine) as session:
+        playback_device = session.query(Device.device_name).first()
 
-        if dev:
-            st.text("Playback on device: " + dev[0])
+        if playback_device:
+            st.text("Playback on device: " + playback_device[0])
         else:
             st.text("Please select playback device.")
 
