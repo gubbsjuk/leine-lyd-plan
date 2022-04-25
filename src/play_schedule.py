@@ -56,9 +56,6 @@ def main(engine, update_interval):
     last_updated = datetime.datetime(1970, 1, 1)
     last_updated_from_db = last_updated
 
-    n_entries = 0
-    n_entries_from_db = n_entries
-
     while True:
         print(
             datetime.datetime.now(), ": Looking for new playlists in schedule"
@@ -70,23 +67,30 @@ def main(engine, update_interval):
         with Session(engine) as session:
 
             last_updated_from_db = check_for_update_in_table(session, Schedule)
-            n_entries_from_db = session.query(Schedule.last_updated).count()
 
         # if nothing has changed since last time
-        if (last_updated_from_db <= last_updated) and (n_entries_from_db == n_entries):
+        if last_updated_from_db <= last_updated:
             time.sleep(update_interval)
             continue
 
-        plans = session.query(Schedule).all()
+        plans = (
+            session.query(Schedule).filter(Schedule.last_updated > last_updated).all()
+        )
 
         last_updated = last_updated_from_db
-        n_entries = n_entries_from_db
 
-        schedule.clear()
         for p in plans:
-            getattr(schedule.every(), p.start_day).at(p.start_time).do(
-                setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
-            )
+            if p.to_delete:
+                schedule.get_jobs(p.schedule_id).clear()
+                session.query(Schedule).filter_by(schedule_id=p.schedule_id).filter_by(
+                    to_delete="Yes"
+                ).delete()
+                session.commit()
+                print("Deleted job: " + p.schedule_id)
+            else:
+                getattr(schedule.every(), p.start_day).at(p.start_time).do(
+                    setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
+                ).tag(p.schedule_id)
 
         print("CURRENT SCHEDULE:")
         for i, job in enumerate(schedule.get_jobs()):
