@@ -132,7 +132,9 @@ def show_main_page(spotify, engine):
 
     st.subheader("Add to plan", anchor="add")
     with st.form(key="playlist_entry_form"):
-        playlist = st.selectbox("Playlist", st.session_state.playlist_map.keys())
+        playlist = st.selectbox(
+            "Playlist", sorted(st.session_state.playlist_map.keys(), key=str.lower)
+        )
         start_day = st.selectbox(
             "Day",
             (
