@@ -1,10 +1,12 @@
+import hashlib
+
 import spotipy
 import streamlit as st
 
 from dotenv import load_dotenv
 from spotipy.cache_handler import MemoryCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -149,7 +151,19 @@ def show_main_page(spotify, engine):
         )
         start_time = st.time_input("Start time")
         if st.form_submit_button("Submit"):
+            schedule_id_tuple = (
+                st.session_state["spotify_user_uri"],
+                st.session_state.playlist_map[playlist],
+                start_day.lower(),
+                start_time.isoformat(),
+            )
+            schedule_id = hashlib.md5()
+
+            for s in schedule_id_tuple:
+                schedule_id.update(s.encode())
+
             plan_entry = {
+                "schedule_id": schedule_id.hexdigest(),
                 "user_uri": st.session_state["spotify_user_uri"],
                 "playlist": playlist,
                 "playlist_uri": st.session_state.playlist_map[playlist],
@@ -170,8 +184,16 @@ def show_main_page(spotify, engine):
     st.subheader("Your plan", anchor="plan")
 
     with Session(engine) as session:
+        test = session.query(Schedule).all()
+        for i, p in enumerate(test):
+            st.write(p.schedule_id)
         plans = session.query(Schedule).where(
-            Schedule.user_uri == st.session_state["spotify_user_uri"]
+            (
+                and_(
+                    Schedule.user_uri == st.session_state["spotify_user_uri"],
+                    Schedule.to_delete == False,  # NOQA
+                )
+            )
         )
 
     for i, plan in enumerate(plans):
@@ -185,13 +207,12 @@ def show_main_page(spotify, engine):
                 key=f"start_day_{i}",
             )
             if st.form_submit_button("Delete"):
-                st.write("deleting", i)
                 with Session(engine) as session:
                     session.query(Schedule).filter_by(
-                        playlist_uri=plan.playlist_uri,
-                        start_day=plan.start_day,
-                        start_time=plan.start_time,
-                    ).delete()
+                        schedule_id=plan.schedule_id
+                    ).update(
+                        {"to_delete": True}
+                    )  # TODO: Replace with 8-bit flag
                     session.commit()
                 raise st.experimental_rerun()
 

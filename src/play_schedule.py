@@ -7,7 +7,7 @@ import spotipy
 
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import Session
 
 from constants import DB_PATH, SCOPES
@@ -56,13 +56,14 @@ def main(engine, update_interval):
     last_updated = datetime.datetime(1970, 1, 1)
     last_updated_from_db = last_updated
 
-    n_entries = 0
-    n_entries_from_db = n_entries
-
     while True:
         print(
             datetime.datetime.now(), ": Looking for new playlists in schedule"
         )  # TODO: Logging
+
+        print("CURRENT SCHEDULE:")
+        for i, job in enumerate(schedule.get_jobs()):
+            print(f"Job {i}: ", job)  # TODO: Remove this...
         schedule.run_pending()
 
         plans = []
@@ -70,27 +71,33 @@ def main(engine, update_interval):
         with Session(engine) as session:
 
             last_updated_from_db = check_for_update_in_table(session, Schedule)
-            n_entries_from_db = session.query(Schedule.last_updated).count()
 
         # if nothing has changed since last time
-        if (last_updated_from_db <= last_updated) and (n_entries_from_db == n_entries):
+        if last_updated_from_db <= last_updated:
             time.sleep(update_interval)
             continue
 
-        plans = session.query(Schedule).all()
+        plans = (
+            session.query(Schedule).filter(Schedule.last_updated > last_updated).all()
+        )
 
         last_updated = last_updated_from_db
-        n_entries = n_entries_from_db
 
-        schedule.clear()
         for p in plans:
-            getattr(schedule.every(), p.start_day).at(p.start_time).do(
-                setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
-            )
-
-        print("CURRENT SCHEDULE:")
-        for i, job in enumerate(schedule.get_jobs()):
-            print(f"Job {i}: ", job)  # TODO: Remove this...
+            if p.to_delete:
+                schedule.clear(p.schedule_id)
+                session.query(Schedule).where(
+                    and_(
+                        Schedule.schedule_id == p.schedule_id,
+                        Schedule.to_delete == True,  # NOQA
+                    )
+                ).delete()
+                session.commit()
+                print("Deleted job: " + p.schedule_id)
+            else:
+                getattr(schedule.every(), p.start_day).at(p.start_time).do(
+                    setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
+                ).tag(p.schedule_id)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Column, String, func
+from sqlalchemy import TIMESTAMP, Boolean, Column, String, func
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -19,11 +19,13 @@ class Device(Base):
 
 class Schedule(Base):
     __tablename__ = "schedule"
+    schedule_id = Column(String(), primary_key=True)
     user_uri = Column(String(), primary_key=True)
     playlist = Column(String())
     playlist_uri = Column(String())
     start_day = Column(String(), primary_key=True)
     start_time = Column(String(), primary_key=True)
+    to_delete = Column(Boolean(), default=False)
     last_updated = Column(
         TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp()
     )
