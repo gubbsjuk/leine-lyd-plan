@@ -6,7 +6,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from spotipy.cache_handler import MemoryCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -184,10 +184,16 @@ def show_main_page(spotify, engine):
     st.subheader("Your plan", anchor="plan")
 
     with Session(engine) as session:
-        plans = (
-            session.query(Schedule)
-            .where(Schedule.user_uri == st.session_state["spotify_user_uri"])
-            .where(Schedule.to_delete != "Yes")
+        test = session.query(Schedule).all()
+        for i, p in enumerate(test):
+            st.write(p.schedule_id)
+        plans = session.query(Schedule).where(
+            (
+                and_(
+                    Schedule.user_uri == st.session_state["spotify_user_uri"],
+                    Schedule.to_delete == False,  # NOQA
+                )
+            )
         )
 
     for i, plan in enumerate(plans):
@@ -204,7 +210,9 @@ def show_main_page(spotify, engine):
                 with Session(engine) as session:
                     session.query(Schedule).filter_by(
                         schedule_id=plan.schedule_id
-                    ).update({"to_delete": "Yes"})
+                    ).update(
+                        {"to_delete": True}
+                    )  # TODO: Replace with 8-bit flag
                     session.commit()
                 raise st.experimental_rerun()
 

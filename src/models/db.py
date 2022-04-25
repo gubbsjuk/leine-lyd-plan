@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Column, String, func
+from sqlalchemy import TIMESTAMP, Boolean, Column, String, func
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -25,7 +25,7 @@ class Schedule(Base):
     playlist_uri = Column(String())
     start_day = Column(String(), primary_key=True)
     start_time = Column(String(), primary_key=True)
-    to_delete = Column(String())  # TODO: Replace with 8-bit flag or similiar
+    to_delete = Column(Boolean(), default=False)
     last_updated = Column(
         TIMESTAMP, server_default=func.now(), onupdate=func.current_timestamp()
     )

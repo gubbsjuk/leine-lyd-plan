@@ -7,7 +7,7 @@ import spotipy
 
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
-from sqlalchemy import create_engine
+from sqlalchemy import and_, create_engine
 from sqlalchemy.orm import Session
 
 from constants import DB_PATH, SCOPES
@@ -60,6 +60,10 @@ def main(engine, update_interval):
         print(
             datetime.datetime.now(), ": Looking for new playlists in schedule"
         )  # TODO: Logging
+
+        print("CURRENT SCHEDULE:")
+        for i, job in enumerate(schedule.get_jobs()):
+            print(f"Job {i}: ", job)  # TODO: Remove this...
         schedule.run_pending()
 
         plans = []
@@ -81,9 +85,12 @@ def main(engine, update_interval):
 
         for p in plans:
             if p.to_delete:
-                schedule.get_jobs(p.schedule_id).clear()
-                session.query(Schedule).filter_by(schedule_id=p.schedule_id).filter_by(
-                    to_delete="Yes"
+                schedule.clear(p.schedule_id)
+                session.query(Schedule).where(
+                    and_(
+                        Schedule.schedule_id == p.schedule_id,
+                        Schedule.to_delete == True,  # NOQA
+                    )
                 ).delete()
                 session.commit()
                 print("Deleted job: " + p.schedule_id)
@@ -91,10 +98,6 @@ def main(engine, update_interval):
                 getattr(schedule.every(), p.start_day).at(p.start_time).do(
                     setup_play, user_uri=p.user_uri, playlist_uri=p.playlist_uri
                 ).tag(p.schedule_id)
-
-        print("CURRENT SCHEDULE:")
-        for i, job in enumerate(schedule.get_jobs()):
-            print(f"Job {i}: ", job)  # TODO: Remove this...
 
 
 if __name__ == "__main__":
